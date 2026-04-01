@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "notion-multi-mcp"
-version = "0.1.0"
+version = "0.1.1"
 description = "MCP server for managing multiple Notion accounts simultaneously"
 readme = "README.md"
 license = "MIT"
