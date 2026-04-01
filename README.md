@@ -128,6 +128,54 @@ Once configured, you can ask your AI assistant:
 - *"Copy the database schema from work to team"* → `work_retrieve_database` + `team_create_database`
 - *"List all pages in both accounts"* → `work_search` + `personal_search` in parallel
 
+### Known Issue: `notion-client` v3.0.0 — `properties` silently ignored
+
+The upstream Python SDK [`notion-client` v3.0.0](https://pypi.org/project/notion-client/) has a bug where `databases.create()` and `databases.update()` **silently drop the `properties` parameter**, so you cannot create databases with custom columns or update existing database schemas through the SDK.
+
+**Root cause:** The `pick()` whitelist in `api_endpoints.py` does not include `"properties"`. ([GitHub Issue](https://github.com/ramnes/notion-sdk-py/issues))
+
+**Workaround:** Manually add `"properties"` to the `pick()` calls in your installed `notion-client` package:
+
+```bash
+# Find the file
+python -c "import notion_client; print(notion_client.__file__)"
+# → .../site-packages/notion_client/__init__.py
+# Edit: .../site-packages/notion_client/api_endpoints.py
+```
+
+In `api_endpoints.py`, find the `DatabasesEndpoint` class and add `"properties"` to both `pick()` calls:
+
+```python
+# In create() — add "properties" to the pick list:
+body=pick(
+    kwargs,
+    "parent",
+    "title",
+    "description",
+    "properties",        # ← add this line
+    "is_inline",
+    "initial_data_source",
+    "icon",
+    "cover",
+),
+
+# In update() — add "properties" to the pick list:
+body=pick(
+    kwargs,
+    "parent",
+    "title",
+    "description",
+    "properties",        # ← add this line
+    "is_inline",
+    "icon",
+    "cover",
+    "in_trash",
+    "is_locked",
+),
+```
+
+This fix will be overwritten if you upgrade `notion-client`. Check future releases for an official fix.
+
 ### Requirements
 
 - Python 3.10+
@@ -275,6 +323,54 @@ NOTION_ACCOUNTS=work:ntn_abc123,personal:ntn_def456,team:ntn_ghi789
 - 「在 personal Notion 建一個新頁面」→ 呼叫 `personal_create_page`
 - 「把 work 的資料庫結構複製到 team」→ 呼叫 `work_retrieve_database` + `team_create_database`
 - 「列出兩個帳號的所有頁面」→ 同時呼叫 `work_search` 和 `personal_search`
+
+### 已知問題：`notion-client` v3.0.0 — `properties` 參數被靜默忽略
+
+上游 Python SDK [`notion-client` v3.0.0](https://pypi.org/project/notion-client/) 存在一個 bug：`databases.create()` 和 `databases.update()` 會**靜默丟棄 `properties` 參數**，導致無法透過 SDK 建立帶有自訂欄位的資料庫，也無法更新資料庫結構。
+
+**根本原因：** `api_endpoints.py` 中的 `pick()` 白名單沒有包含 `"properties"`。（[GitHub Issue](https://github.com/ramnes/notion-sdk-py/issues)）
+
+**解決方法：** 手動在已安裝的 `notion-client` 套件中加入 `"properties"`：
+
+```bash
+# 找到檔案位置
+python -c "import notion_client; print(notion_client.__file__)"
+# → .../site-packages/notion_client/__init__.py
+# 編輯：.../site-packages/notion_client/api_endpoints.py
+```
+
+在 `api_endpoints.py` 中找到 `DatabasesEndpoint` 類別，在兩個 `pick()` 呼叫中加入 `"properties"`：
+
+```python
+# 在 create() 中 — 加入 "properties"：
+body=pick(
+    kwargs,
+    "parent",
+    "title",
+    "description",
+    "properties",        # ← 加入這行
+    "is_inline",
+    "initial_data_source",
+    "icon",
+    "cover",
+),
+
+# 在 update() 中 — 加入 "properties"：
+body=pick(
+    kwargs,
+    "parent",
+    "title",
+    "description",
+    "properties",        # ← 加入這行
+    "is_inline",
+    "icon",
+    "cover",
+    "in_trash",
+    "is_locked",
+),
+```
+
+升級 `notion-client` 時此修改會被覆蓋，請留意未來版本是否已修復。
 
 ### 系統需求
 
