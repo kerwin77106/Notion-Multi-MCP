@@ -97,7 +97,7 @@ Each connected account gets all 22 tools, prefixed with the account name:
 | # | Tool | Description |
 |---|------|-------------|
 | 1 | `{prefix}_search` | Search pages and databases |
-| 2 | `{prefix}_query_database` | Query database contents with filters and sorts |
+| 2 | `{prefix}_query_database` | Query database contents (requires `data_source_id`) |
 | 3 | `{prefix}_create_page` | Create a new page |
 | 4 | `{prefix}_retrieve_page` | Get page information |
 | 5 | `{prefix}_update_page` | Update page properties |
@@ -127,6 +127,24 @@ Once configured, you can ask your AI assistant:
 - *"Create a new page in my personal Notion"* → `personal_create_page`
 - *"Copy the database schema from work to team"* → `work_retrieve_database` + `team_create_database`
 - *"List all pages in both accounts"* → `work_search` + `personal_search` in parallel
+
+### Breaking Change in v0.2.0: `query_database` now requires `data_source_id`
+
+The upstream SDK `notion-client` v3.x removed `databases.query()`. Notion's API now uses **data sources** instead of databases for query operations.
+
+**Before (v0.1.x):**
+```python
+query_database(database_id="108640b9-...")
+```
+
+**After (v0.2.0):**
+```python
+query_database(data_source_id="79e0a629-...")
+```
+
+**How to find your `data_source_id`:** Use `{prefix}_search` with `filter_json: {"value": "data_source", "property": "object"}` to find the data source ID that corresponds to your database.
+
+The `data_source` tools (`query_data_source`, `retrieve_data_source`, `list_data_source_templates`, `update_data_source`) now also use the SDK natively instead of raw HTTP requests.
 
 ### Known Issue: `notion-client` v3.0.0 — `properties` silently ignored
 
@@ -293,7 +311,7 @@ NOTION_ACCOUNTS=work:ntn_abc123,personal:ntn_def456,team:ntn_ghi789
 | # | 工具名稱 | 說明 |
 |---|---------|------|
 | 1 | `{前綴}_search` | 搜尋頁面和資料庫 |
-| 2 | `{前綴}_query_database` | 查詢資料庫內容（支援篩選和排序） |
+| 2 | `{前綴}_query_database` | 查詢資料庫內容（需傳入 `data_source_id`） |
 | 3 | `{前綴}_create_page` | 建立新頁面 |
 | 4 | `{前綴}_retrieve_page` | 取得頁面資訊 |
 | 5 | `{前綴}_update_page` | 更新頁面屬性 |
@@ -323,6 +341,24 @@ NOTION_ACCOUNTS=work:ntn_abc123,personal:ntn_def456,team:ntn_ghi789
 - 「在 personal Notion 建一個新頁面」→ 呼叫 `personal_create_page`
 - 「把 work 的資料庫結構複製到 team」→ 呼叫 `work_retrieve_database` + `team_create_database`
 - 「列出兩個帳號的所有頁面」→ 同時呼叫 `work_search` 和 `personal_search`
+
+### v0.2.0 破壞性變更：`query_database` 改為需要 `data_source_id`
+
+上游 SDK `notion-client` v3.x 移除了 `databases.query()`。Notion API 現在使用 **data sources** 取代 databases 進行查詢操作。
+
+**變更前（v0.1.x）：**
+```python
+query_database(database_id="108640b9-...")
+```
+
+**變更後（v0.2.0）：**
+```python
+query_database(data_source_id="79e0a629-...")
+```
+
+**如何取得 `data_source_id`：** 使用 `{前綴}_search` 並帶入 `filter_json: {"value": "data_source", "property": "object"}` 來查詢對應資料庫的 data source ID。
+
+`data_source` 系列工具（`query_data_source`、`retrieve_data_source`、`list_data_source_templates`、`update_data_source`）現在也改用 SDK 原生方法，不再使用 raw HTTP request。
 
 ### 已知問題：`notion-client` v3.0.0 — `properties` 參數被靜默忽略
 

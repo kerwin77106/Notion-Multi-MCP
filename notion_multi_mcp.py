@@ -67,7 +67,7 @@ def register_tools(prefix: str, client: Client, api_key: str) -> None:
     def _raw_request(method: str, path: str, body: dict | None = None) -> dict:
         headers = {
             "Authorization": f"Bearer {api_key}",
-            "Notion-Version": "2022-06-28",
+            "Notion-Version": "2025-02-19",
             "Content-Type": "application/json",
         }
         url = f"https://api.notion.com/v1/{path}"
@@ -104,23 +104,23 @@ def register_tools(prefix: str, client: Client, api_key: str) -> None:
             return json.dumps({"error": str(e)}, ensure_ascii=False)
 
     # ── 2: query_database ────────────────────────────────────────
-    @mcp.tool(name=f"{prefix}_query_database", description=f"[{prefix}] Query database contents")
+    @mcp.tool(name=f"{prefix}_query_database", description=f"[{prefix}] Query database contents (use data_source_id, not database_id)")
     def query_database(
-        database_id: str,
+        data_source_id: str,
         filter_json: str | dict | None = None,
         sorts_json: str | list | None = None,
         start_cursor: str | None = None,
         page_size: int = 100,
     ) -> str:
         try:
-            kwargs: dict = {"database_id": database_id, "page_size": page_size}
+            kwargs: dict = {"data_source_id": data_source_id, "page_size": page_size}
             if filter_json is not None:
                 kwargs["filter"] = _parse_json(filter_json)
             if sorts_json is not None:
                 kwargs["sorts"] = _parse_json(sorts_json)
             if start_cursor is not None:
                 kwargs["start_cursor"] = start_cursor
-            return json.dumps(client.databases.query(**kwargs), ensure_ascii=False)
+            return json.dumps(client.data_sources.query(**kwargs), ensure_ascii=False)
         except Exception as e:
             return json.dumps({"error": str(e)}, ensure_ascii=False)
 
@@ -322,16 +322,16 @@ def register_tools(prefix: str, client: Client, api_key: str) -> None:
         page_size: int | None = None,
     ) -> str:
         try:
-            body: dict = {}
+            kwargs: dict = {"data_source_id": data_source_id}
             if filter_json is not None:
-                body["filter"] = _parse_json(filter_json)
+                kwargs["filter"] = _parse_json(filter_json)
             if sorts_json is not None:
-                body["sorts"] = _parse_json(sorts_json)
+                kwargs["sorts"] = _parse_json(sorts_json)
             if start_cursor is not None:
-                body["start_cursor"] = start_cursor
+                kwargs["start_cursor"] = start_cursor
             if page_size is not None:
-                body["page_size"] = page_size
-            return json.dumps(_raw_request("POST", f"data_sources/{data_source_id}/query", body=body), ensure_ascii=False)
+                kwargs["page_size"] = page_size
+            return json.dumps(client.data_sources.query(**kwargs), ensure_ascii=False)
         except Exception as e:
             return json.dumps({"error": str(e)}, ensure_ascii=False)
 
@@ -339,7 +339,7 @@ def register_tools(prefix: str, client: Client, api_key: str) -> None:
     @mcp.tool(name=f"{prefix}_retrieve_data_source", description=f"[{prefix}] Get data source info")
     def retrieve_data_source(data_source_id: str) -> str:
         try:
-            return json.dumps(_raw_request("GET", f"data_sources/{data_source_id}"), ensure_ascii=False)
+            return json.dumps(client.data_sources.retrieve(data_source_id=data_source_id), ensure_ascii=False)
         except Exception as e:
             return json.dumps({"error": str(e)}, ensure_ascii=False)
 
@@ -347,7 +347,7 @@ def register_tools(prefix: str, client: Client, api_key: str) -> None:
     @mcp.tool(name=f"{prefix}_list_data_source_templates", description=f"[{prefix}] List data source templates")
     def list_data_source_templates(data_source_id: str) -> str:
         try:
-            return json.dumps(_raw_request("GET", f"data_sources/{data_source_id}/templates"), ensure_ascii=False)
+            return json.dumps(client.data_sources.list_templates(data_source_id=data_source_id), ensure_ascii=False)
         except Exception as e:
             return json.dumps({"error": str(e)}, ensure_ascii=False)
 
@@ -356,7 +356,7 @@ def register_tools(prefix: str, client: Client, api_key: str) -> None:
     def update_data_source(data_source_id: str, data_json: str | dict) -> str:
         try:
             return json.dumps(
-                _raw_request("PATCH", f"data_sources/{data_source_id}", body=_parse_json(data_json)),
+                client.data_sources.update(data_source_id=data_source_id, **_parse_json(data_json)),
                 ensure_ascii=False,
             )
         except Exception as e:
