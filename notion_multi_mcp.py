@@ -64,10 +64,10 @@ def _parse_json(value: str | dict | list) -> dict | list:
 def register_tools(prefix: str, client: Client, api_key: str) -> None:
     """Register all 22 Notion tools for one account with the given prefix."""
 
-    def _raw_request(method: str, path: str, body: dict | None = None) -> dict:
+    def _raw_request(method: str, path: str, body: dict | None = None, version: str = "2022-06-28") -> dict:
         headers = {
             "Authorization": f"Bearer {api_key}",
-            "Notion-Version": "2025-02-19",
+            "Notion-Version": version,
             "Content-Type": "application/json",
         }
         url = f"https://api.notion.com/v1/{path}"
@@ -79,7 +79,12 @@ def register_tools(prefix: str, client: Client, api_key: str) -> None:
             resp = httpx.patch(url, headers=headers, json=body or {}, timeout=30.0)
         else:
             raise ValueError(f"Unsupported HTTP method: {method}")
-        resp.raise_for_status()
+        if not resp.is_success:
+            try:
+                detail = resp.json()
+            except Exception:
+                detail = resp.text
+            raise Exception(f"HTTP {resp.status_code}: {detail}")
         return resp.json()
 
     # ── 1: search ────────────────────────────────────────────────
@@ -202,7 +207,7 @@ def register_tools(prefix: str, client: Client, api_key: str) -> None:
     def move_page(page_id: str, new_parent_json: str | dict) -> str:
         try:
             return json.dumps(
-                _raw_request("POST", f"pages/{page_id}/move", body={"parent": _parse_json(new_parent_json)}),
+                _raw_request("POST", f"pages/{page_id}/move", body={"parent": _parse_json(new_parent_json)}, version="2026-03-11"),
                 ensure_ascii=False,
             )
         except Exception as e:
@@ -276,16 +281,19 @@ def register_tools(prefix: str, client: Client, api_key: str) -> None:
         cover_json: str | dict | None = None,
     ) -> str:
         try:
-            kwargs: dict = {
+            body: dict = {
                 "parent": _parse_json(parent_json),
                 "title": _parse_json(title_json),
                 "properties": _parse_json(properties_json),
             }
             if icon_json is not None:
-                kwargs["icon"] = _parse_json(icon_json)
+                body["icon"] = _parse_json(icon_json)
             if cover_json is not None:
-                kwargs["cover"] = _parse_json(cover_json)
-            return json.dumps(client.databases.create(**kwargs), ensure_ascii=False)
+                body["cover"] = _parse_json(cover_json)
+            return json.dumps(
+                _raw_request("POST", "databases", body=body),
+                ensure_ascii=False,
+            )
         except Exception as e:
             return json.dumps({"error": str(e)}, ensure_ascii=False)
 
@@ -299,16 +307,19 @@ def register_tools(prefix: str, client: Client, api_key: str) -> None:
         cover_json: str | dict | None = None,
     ) -> str:
         try:
-            kwargs: dict = {"database_id": database_id}
+            body: dict = {}
             if title_json is not None:
-                kwargs["title"] = _parse_json(title_json)
+                body["title"] = _parse_json(title_json)
             if properties_json is not None:
-                kwargs["properties"] = _parse_json(properties_json)
+                body["properties"] = _parse_json(properties_json)
             if icon_json is not None:
-                kwargs["icon"] = _parse_json(icon_json)
+                body["icon"] = _parse_json(icon_json)
             if cover_json is not None:
-                kwargs["cover"] = _parse_json(cover_json)
-            return json.dumps(client.databases.update(**kwargs), ensure_ascii=False)
+                body["cover"] = _parse_json(cover_json)
+            return json.dumps(
+                _raw_request("PATCH", f"databases/{database_id}", body=body),
+                ensure_ascii=False,
+            )
         except Exception as e:
             return json.dumps({"error": str(e)}, ensure_ascii=False)
 
