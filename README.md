@@ -212,6 +212,15 @@ export NOTION_ACCOUNTS="dev:ntn_your_key_here"
 python notion_multi_mcp.py
 ```
 
+### Changelog
+
+| Version | Changes |
+|---------|---------|
+| **v0.2.1** | Fix `create_database`/`update_database` to bypass `notion-client` v3.0.0 properties bug; improved error messages with HTTP status details; `move_page` now uses Notion API `2026-03-11` |
+| **v0.2.0** | ⚠️ Breaking: `query_database` parameter renamed from `database_id` to `data_source_id`; migrated to data_sources API |
+| **v0.1.1** | Fix MCP client compatibility for JSON parameters |
+| **v0.1.0** | Initial release |
+
 ### License
 
 [MIT](LICENSE)
@@ -425,6 +434,15 @@ export NOTION_ACCOUNTS="dev:ntn_你的金鑰"
 
 python notion_multi_mcp.py
 ```
+
+### 版本歷史
+
+| 版本 | 變更內容 |
+|------|---------|
+| **v0.2.1** | 修正 `create_database`/`update_database` 繞過 `notion-client` v3.0.0 properties bug；改善錯誤訊息（含 HTTP 狀態碼）；`move_page` 改用 Notion API `2026-03-11` |
+| **v0.2.0** | ⚠️ 破壞性變更：`query_database` 參數從 `database_id` 改為 `data_source_id`；遷移至 data_sources API |
+| **v0.1.1** | 修正 MCP 客戶端 JSON 參數相容性問題 |
+| **v0.1.0** | 初始版本發布 |
 
 ### 授權
 
